@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Giveaways</title>
+    <style>
+        body { font-family: sans-serif; background: #18181b; color: white; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #9147ff; }
+        .card { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; }
+        .form-row { margin-bottom: 10px; display: flex; justify-content: space-between; }
+        input, select { padding: 5px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; }
+        button { padding: 8px 15px; cursor: pointer; background: #9147ff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #772ce8; }
+        .danger { background: #ff4f4d; }
+        .danger:hover { background: #e64644; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #333; margin-bottom: 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Giveaway Manager</h1>
+    <a href="index.html" style="color: #aaa;">&larr; Back to Dashboard</a>
+
+    <div class="card">
+        <h3>Create New Preset</h3>
+        <div class="form-row"><label>Name:</label> <input type="text" id="gName" placeholder="Sub Night"></div>
+        <div class="form-row"><label>Command:</label> <input type="text" id="gCommand" placeholder="!subnight"></div>
+        <div class="form-row"><label>Winner Message:</label> <input type="text" id="gMsg" placeholder="Congrats {winner}!"></div>
+        <div class="form-row"><label>Default Prize:</label> <input type="text" id="gPrize" placeholder="Twitch Prime"></div>
+        <div class="form-row"><label>Timer (min):</label> <input type="number" id="gTimer" value="0"></div>
+        <button onclick="createPreset()">Create Preset</button>
+    </div>
+
+    <div id="presetList"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('user');
+
+        async function loadPresets() {
+            const res = await fetch(`/api/settings?username=${username}`);
+            const data = await res.json();
+            // Note: data.giveaways is the array
+            const listDiv = document.getElementById('presetList');
+            listDiv.innerHTML = '';
+            
+            if(data.giveaways) {
+                data.giveaways.forEach((g, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
+                        <div><strong>${g.name}</strong> (${g.command})</div>
+                        <button class="danger" onclick="deletePreset(${index})">Delete</button>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            }
+        }
+
+        async function createPreset() {
+            const name = document.getElementById('gName').value;
+            const command = document.getElementById('gCommand').value;
+            const winnerMessage = document.getElementById('gMsg').value;
+            const prize = document.getElementById('gPrize').value;
+            const timer = parseInt(document.getElementById('gTimer').value) || 0;
+
+            if(!name || !command) return alert("Name and Command required");
+
+            // Fetch current, append, save
+            const res = await fetch(`/api/settings?username=${username}`);
+            const settings = await res.json();
+            
+            const newPreset = {
+                name, command, winnerMessage, prize, timer,
+                weights: { default: 1, vip: 1, mod: 1, t1: 1, t2: 1, t3: 1 },
+                allow: { default: true, vip: true, mod: true, t1: true, t2: true, t3: true }
+            };
+
+            if(!settings.giveaways) settings.giveaways = [];
+            settings.giveaways.push(newPreset);
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, giveaways: settings.giveaways })
+            });
+
+            loadPresets();
+            alert("Preset Created!");
+        }
+
+        async function deletePreset(index) {
+            if(!confirm("Delete this preset?")) return;
+            
+            const res = await fetch(`/api/settings?username=${username}`);
+            const settings = await res.json();
+            settings.giveaways.splice(index, 1);
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, giveaways: settings.giveaways })
+            });
+            loadPresets();
+        }
+
+        loadPresets();
+    </script>
+</body>
+</html>

@@ -5,31 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giveaway Bot Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #18181b; color: white; display: flex; justify-content: center; padding-top: 50px; margin: 0; }
-        .container { background: #2d2d2d; padding: 30px; border-radius: 12px; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #18181b; color: white; display: flex; justify-content: center; padding-top: 20px; margin: 0; }
+        .container { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         h2 { text-align: center; color: #9147ff; margin-top: 0; }
         
-        .control-group { margin-bottom: 20px; }
+        .section { border-bottom:1px solid #444; padding-bottom: 20px; margin-bottom: 20px; }
+        .section:last-child { border: none; }
+        
         label { display: block; margin-bottom: 5px; font-size: 0.9em; }
         
-        input[type="text"], input[type="number"] {
+        input, select, button {
             width: 100%; padding: 10px; box-sizing: border-box;
             border-radius: 4px; border: 1px solid #444; background: #18181b; color: white;
+            margin-bottom: 10px;
         }
         
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        
-        button {
-            padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;
-            transition: 0.2s;
-        }
-        .btn-primary { background: #9147ff; color: white; }
-        .btn-primary:hover { background: #772ce8; }
-        .btn-danger { background: #ff4f4d; color: white; }
-        .btn-danger:hover { background: #e64644; }
-        .btn-connect { width: 100%; margin-bottom: 20px; background: #00c853; }
+        button { cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; opacity: 0.5; }
+        .btn-primary { background: #9147ff; }
+        .btn-primary:hover:not(:disabled) { background: #772ce8; }
+        .btn-danger { background: #ff4f4d; }
+        .btn-danger:hover:not(:disabled) { background: #e64644; }
+        .btn-warning { background: #ff9f4d; color: white; }
+        .btn-warning:hover { background: #e68e44; }
+        .btn-edit { background: #444; font-size: 0.8em; padding: 5px; }
+        .btn-edit:hover { background: #555; }
+        .btn-connect { background: #00c853; }
 
-        #status { text-align: center; margin-top: 20px; font-size: 0.9em; color: #aaa; }
+        .active-item { background: #383838; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 4px solid #9147ff; }
+        .active-info h4 { margin: 0; color: #9147ff; }
+        .active-info p { margin: 2px 0; font-size: 0.85em; color: #ccc; }
+        .active-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+        .btn-sm { padding: 5px; font-size: 0.8em; flex: 1; }
+
+        .console-box {
+            background: #000; border: 1px solid #444; color: #0f0;
+            font-family: 'Courier New', Courier, monospace; font-size: 12px;
+            height: 150px; overflow-y: scroll; padding: 10px; margin-top: 20px;
+            border-radius: 4px; text-align: left;
+        }
+        .log-entry { margin-bottom: 2px; border-bottom: 1px solid #111; }
+        .log-time { color: #888; margin-right: 5px; }
+
+        .links { text-align: center; margin-top: 20px; }
+        .links a { color: #9147ff; text-decoration: none; margin: 0 10px; font-size: 0.9em; }
+        .links a:hover { text-decoration: underline; }
+        
+        .checkbox-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #9147ff; }
     </style>
 </head>
 <body>
@@ -37,75 +60,207 @@
     <div class="container">
         <h2>Bot Control</h2>
 
-        <!-- 1. Connect Bot -->
-        <div class="control-group">
-            <label>Streamer Username (to join chat):</label>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="channelInput" placeholder="e.g. ninja">
-                <button class="btn-primary" onclick="connectBot()" style="width: auto;">Connect</button>
+        <!-- 1. Connect -->
+        <div class="section">
+            <label>Streamer Username:</label>
+            <div style="display:flex; gap:5px; margin-bottom:0;">
+                <input type="text" id="channelInput" placeholder="e.g. ninja" onchange="updateLinks()">
+                <button class="btn-connect" id="btnConnect" style="width:auto;" onclick="connectBot()">Connect</button>
             </div>
         </div>
 
-        <!-- 2. Giveaway Controls -->
-        <div class="control-group">
+        <!-- 2. Active Giveaways List -->
+        <div class="section">
+            <label>Active Giveaways:</label>
+            <div id="activeList">
+                <p style="color: #777; font-style: italic;">No giveaways running.</p>
+            </div>
+        </div>
+
+        <!-- 3. Start New Giveaway -->
+        <div class="section">
+            <label>Start New Giveaway:</label>
+            
+            <label>Load Preset (Optional):</label>
+            <select id="presetSelect" onchange="loadPreset()">
+                <option value="">-- Select a Preset --</option>
+            </select>
+
+            <label>Command:</label>
+            <input type="text" id="cmdInput" value="!enter">
+
             <label>Prize Name:</label>
             <input type="text" id="prizeInput" placeholder="e.g. $10 Gift Card">
             
-            <div class="btn-grid">
-                <button class="btn-primary" onclick="startGiveaway()">Start</button>
-                <button class="btn-danger" onclick="stopGiveaway()">Stop & Pick</button>
+            <label>Winner Message (use {winner}):</label>
+            <input type="text" id="msgInput" value="🎊 The winner is... {winner} !">
+
+            <label>Timer (minutes, 0 = manual):</label>
+            <input type="number" id="timerInput" placeholder="0" value="0" min="0">
+            
+            <div class="checkbox-row">
+                <input type="checkbox" id="loopToggle">
+                <label for="loopToggle" style="margin:0;">Loop this giveaway</label>
             </div>
+
+            <button class="btn-primary" id="btnStart" onclick="startGiveaway()" disabled>Start Giveaway</button>
         </div>
 
-        <!-- 3. Debug/Status -->
-        <div id="status">Status: Disconnected</div>
+        <!-- 4. Console -->
+        <div class="console-box" id="console"><div class="log-entry"><span class="log-time">System:</span> Ready.</div></div>
+
+        <div class="links">
+            <a href="#" id="settingsLink">Weights & Roles</a>
+            <a href="#" id="gawLink">Manage Presets</a>
+        </div>
     </div>
 
-    <!-- Import Socket.IO client from CDN -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         let isConnected = false;
+        let savedPresets = [];
+        let activeGiveaways = [];
 
-        // 1. Connect to the specific channel
+        function logToScreen(msg) {
+            const consoleDiv = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function updateLinks() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if (channel) {
+                document.getElementById('settingsLink').href = `settings.html?user=${channel}`;
+                document.getElementById('gawLink').href = `giveaways.html?user=${channel}`;
+                loadPresets(channel);
+            }
+        }
+
+        async function loadPresets(channel) {
+            if(!channel) channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if(!channel) return;
+            try {
+                const res = await fetch(`/api/settings?username=${channel}`);
+                const data = await res.json();
+                savedPresets = data.giveaways || [];
+                const select = document.getElementById('presetSelect');
+                select.innerHTML = '<option value="">-- Select a Preset --</option>';
+                savedPresets.forEach((p, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.innerText = `${p.name} (${p.command})`;
+                    select.appendChild(opt);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        function loadPreset() {
+            const idx = document.getElementById('presetSelect').value;
+            if (idx === "") return; 
+
+            const p = savedPresets[idx];
+            document.getElementById('cmdInput').value = p.command;
+            document.getElementById('prizeInput').value = p.prize;
+            document.getElementById('msgInput').value = p.winnerMessage;
+            document.getElementById('timerInput').value = p.timer || 0;
+            logToScreen(`Loaded preset: ${p.name}`);
+        }
+
+        function clearInputs() {
+            document.getElementById('presetSelect').value = "";
+            document.getElementById('cmdInput').value = "!enter";
+            document.getElementById('prizeInput').value = "";
+            document.getElementById('msgInput').value = "🎊 The winner is... {winner} !";
+            document.getElementById('timerInput').value = "0";
+            document.getElementById('loopToggle').checked = false;
+        }
+
+        function renderActiveList() {
+            const listDiv = document.getElementById('activeList');
+            listDiv.innerHTML = '';
+
+            if (activeGiveaways.length === 0) {
+                listDiv.innerHTML = '<p style="color: #777; font-style: italic;">No giveaways running.</p>';
+                return;
+            }
+
+            activeGiveaways.forEach((gaw) => {
+                const div = document.createElement('div');
+                div.className = 'active-item';
+                div.innerHTML = `
+                    <div class="active-info">
+                        <h4>${gaw.prize}</h4>
+                        <p>Command: ${gaw.command} | Entries: ${gaw.count || 0}</p>
+                    </div>
+                    <div class="active-actions">
+                        <button class="btn-edit btn-sm" onclick="editGiveaway('${gaw.command}')">Edit</button>
+                        <button class="btn-warning btn-sm" onclick="stopLoop('${gaw.command}')">Stop Loop</button>
+                        <button class="btn-danger btn-sm" onclick="stopGiveaway('${gaw.command}')">Stop</button>
+                    </div>
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+
         function connectBot() {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
             if(!channel) return alert("Enter a channel name");
-
-            console.log("Joining channel:", channel);
+            const btn = document.getElementById('btnConnect');
+            btn.innerText = "Connecting...";
+            btn.disabled = true;
+            logToScreen(`Joining #${channel}...`);
             socket.emit('joinStreamer', channel);
-            
-            isConnected = true;
-            document.getElementById('status').innerText = `Status: Connected to #${channel}`;
-            document.getElementById('status').style.color = "#00ff00";
         }
 
-        // 2. Start Giveaway
         function startGiveaway() {
-            if(!isConnected) return alert("Bot not connected! Enter channel first.");
+            if(!isConnected) return logToScreen("Connect first!");
             
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const cmd = document.getElementById('cmdInput').value;
             const prize = document.getElementById('prizeInput').value;
+            const msg = document.getElementById('msgInput').value;
+            const timer = parseInt(document.getElementById('timerInput').value);
+            const loop = document.getElementById('loopToggle').checked;
 
-            if(!prize) return alert("Please enter a prize name");
+            if(!cmd) return alert("Command is required!");
+            if(!prize) return alert("Prize is required!");
 
-            // Send command to server
-            socket.emit('startGiveaway', { channel, prize });
-            alert(`Giveaway for "${prize}" started in #${channel}!`);
+            socket.emit('startGiveaway', { channel, prize, timer, command: cmd, message: msg, loop });
+            clearInputs();
         }
 
-        // 3. Stop Giveaway
-        function stopGiveaway() {
-            if(!isConnected) return alert("Bot not connected!");
-
+        function stopGiveaway(command) {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            socket.emit('stopGiveaway', channel);
-            alert("Giveaway stopped!");
+            socket.emit('stopGiveaway', { channel, command });
         }
 
-        // Listen for messages from server
-        socket.on('connect', () => {
-            console.log('Connected to server');
+        function stopLoop(command) {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            socket.emit('stopLoop', { channel, command });
+        }
+
+        function editGiveaway(command) {
+            alert(`Edit is ready for Timer/Loop updates via server logic.\nCurrent Command: ${command}`);
+        }
+
+        socket.on('logMessage', (msg) => logToScreen(msg));
+        
+        socket.on('botConnected', (channel) => {
+            isConnected = true;
+            document.getElementById('btnConnect').innerText = "Connected";
+            document.getElementById('btnConnect').disabled = true;
+            document.getElementById('btnStart').disabled = false;
+            logToScreen(`Connected to #${channel}`);
+        });
+
+        socket.on('giveawayStateUpdate', (stateList) => {
+            activeGiveaways = stateList;
+            renderActiveList();
         });
     </script>
 </body>

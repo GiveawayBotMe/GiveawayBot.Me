@@ -1,0 +1,30 @@
+{
+  "name": "giveawaybot.me",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GiveawayBotMe/GiveawayBot.Me.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GiveawayBotMe/GiveawayBot.Me/issues"
+  },
+  "homepage": "https://github.com/GiveawayBotMe/GiveawayBot.Me#readme",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.2",
+    "socket.io": "^4.8.3",
+    "tmi.js": "^1.8.5"
+  }
+}
