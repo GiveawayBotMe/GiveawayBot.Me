@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giveaway Bot Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #18181b; color: white; display: flex; justify-content: center; padding-top: 50px; margin: 0; }
+        .container { background: #2d2d2d; padding: 30px; border-radius: 12px; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #9147ff; margin-top: 0; }
+        
+        .control-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%; padding: 10px; box-sizing: border-box;
+            border-radius: 4px; border: 1px solid #444; background: #18181b; color: white;
+        }
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        
+        button {
+            padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-primary { background: #9147ff; color: white; }
+        .btn-primary:hover { background: #772ce8; }
+        .btn-danger { background: #ff4f4d; color: white; }
+        .btn-danger:hover { background: #e64644; }
+        .btn-connect { width: 100%; margin-bottom: 20px; background: #00c853; }
+
+        #status { text-align: center; margin-top: 20px; font-size: 0.9em; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Bot Control</h2>
+
+        <!-- 1. Connect Bot -->
+        <div class="control-group">
+            <label>Streamer Username (to join chat):</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="channelInput" placeholder="e.g. ninja">
+                <button class="btn-primary" onclick="connectBot()" style="width: auto;">Connect</button>
+            </div>
+        </div>
+
+        <!-- 2. Giveaway Controls -->
+        <div class="control-group">
+            <label>Prize Name:</label>
+            <input type="text" id="prizeInput" placeholder="e.g. $10 Gift Card">
+            
+            <div class="btn-grid">
+                <button class="btn-primary" onclick="startGiveaway()">Start</button>
+                <button class="btn-danger" onclick="stopGiveaway()">Stop & Pick</button>
+            </div>
+        </div>
+
+        <!-- 3. Debug/Status -->
+        <div id="status">Status: Disconnected</div>
+    </div>
+
+    <!-- Import Socket.IO client from CDN -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let isConnected = false;
+
+        // 1. Connect to the specific channel
+        function connectBot() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if(!channel) return alert("Enter a channel name");
+
+            console.log("Joining channel:", channel);
+            socket.emit('joinStreamer', channel);
+            
+            isConnected = true;
+            document.getElementById('status').innerText = `Status: Connected to #${channel}`;
+            document.getElementById('status').style.color = "#00ff00";
+        }
+
+        // 2. Start Giveaway
+        function startGiveaway() {
+            if(!isConnected) return alert("Bot not connected! Enter channel first.");
+            
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const prize = document.getElementById('prizeInput').value;
+
+            if(!prize) return alert("Please enter a prize name");
+
+            // Send command to server
+            socket.emit('startGiveaway', { channel, prize });
+            alert(`Giveaway for "${prize}" started in #${channel}!`);
+        }
+
+        // 3. Stop Giveaway
+        function stopGiveaway() {
+            if(!isConnected) return alert("Bot not connected!");
+
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            socket.emit('stopGiveaway', channel);
+            alert("Giveaway stopped!");
+        }
+
+        // Listen for messages from server
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+    </script>
+</body>
+</html>
