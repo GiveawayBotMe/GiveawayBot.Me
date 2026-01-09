@@ -270,23 +270,15 @@
             activeGiveaways = stateList;
             renderActiveList();
         });
-        
-        socket.on('disconnect', () => {
-            logToScreen('Disconnected from Dashboard Server. Retrying...', 'error');
-            isConnected = false; isGiveawayActive = false;
-            updateButtonStates();
-            
-            const btn = document.getElementById('btnConnect');
-            btn.innerText = "Reconnecting...";
-            
-            // Try to reconnect automatically after 3 seconds
-            setTimeout(() => {
-                const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-                if(channel) {
-                    logToScreen(`Attempting to auto-reconnect to #${channel}...`);
-                    socket.emit('joinStreamer', channel);
-                }
-            }, 3000);
+
+        // AUTO-FILL FROM URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlUser = urlParams.get('user');
+            if (urlUser) {
+                document.getElementById('channelInput').value = urlUser;
+                updateLinks();
+            }
         });
     </script>
 </body>

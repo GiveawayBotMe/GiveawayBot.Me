@@ -81,7 +81,9 @@
         <button onclick="saveSettings()">Save Settings</button>
     </div>
 
-    <a href="index.html" class="back-link">&larr; Back to Dashboard</a>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="index.html" id="backLink" class="settings-link">&larr; Back to Dashboard</a>
+    </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
@@ -106,7 +108,7 @@
                     t3: document.getElementById('allow_t3').checked
                 },
                 options: {
-                    autoRestart: document.getElementById('autoRestart').checked // NEW
+                    autoRestart: document.getElementById('autoRestart').checked
                 }
             };
 
@@ -114,7 +116,7 @@
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, weights: data.weights, allow: data.allow, options: data.options })
+                    body: JSON.stringify({ username, weights: data.weights, allow: data.allow, options: data.options })
                 });
                 
                 if(res.ok) {
@@ -126,6 +128,14 @@
                 console.error(err);
             }
         }
+
+        // UPDATE BACK LINK TO INCLUDE USERNAME
+        window.addEventListener('DOMContentLoaded', () => {
+            if (username) {
+                const link = document.getElementById('backLink');
+                if(link) link.href = `index.html?user=${username}`;
+            }
+        });
     </script>
 </body>
 </html>

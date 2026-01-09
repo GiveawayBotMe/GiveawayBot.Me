@@ -103,7 +103,14 @@
             loadPresets();
         }
 
-        loadPresets();
+        // UPDATE BACK LINK TO INCLUDE USERNAME
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPresets();
+            if (username) {
+                const link = document.getElementById('backLink');
+                if(link) link.href = `index.html?user=${username}`;
+            }
+        });
     </script>
 </body>
 </html>
