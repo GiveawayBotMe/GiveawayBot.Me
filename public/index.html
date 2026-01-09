@@ -57,7 +57,15 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container">        
+    <iframe 
+            src="https://somerewardsfriday.me/pages/giveawaybotme" 
+            width="100%" 
+            height="500px" 
+            style="border:none; border-radius:8px; margin-bottom:20px;"
+            title="GiveawayBot.Me Tips">
+        </iframe>
+
         <h2>Bot Control</h2>
 
         <!-- 1. Connect -->
@@ -261,6 +269,24 @@
         socket.on('giveawayStateUpdate', (stateList) => {
             activeGiveaways = stateList;
             renderActiveList();
+        });
+        
+        socket.on('disconnect', () => {
+            logToScreen('Disconnected from Dashboard Server. Retrying...', 'error');
+            isConnected = false; isGiveawayActive = false;
+            updateButtonStates();
+            
+            const btn = document.getElementById('btnConnect');
+            btn.innerText = "Reconnecting...";
+            
+            // Try to reconnect automatically after 3 seconds
+            setTimeout(() => {
+                const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+                if(channel) {
+                    logToScreen(`Attempting to auto-reconnect to #${channel}...`);
+                    socket.emit('joinStreamer', channel);
+                }
+            }, 3000);
         });
     </script>
 </body>
