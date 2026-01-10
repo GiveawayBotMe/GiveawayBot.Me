@@ -137,6 +137,12 @@
 
         <!-- 6. TAB CONTENT: WEIGHTS -->
         <div id="weights" class="tab-content">
+            
+           <div class="form-row">
+               <label>Bits per Ticket:</label>
+               <input type="number" id="opt_bitsPerTicket" value="0" min="0">
+           </div>
+        
             <label>Weights & Roles</label>
             <div class="form-row"><label>Default:</label> <input type="number" id="w_default" value="1"></div>
             <div class="form-row"><label>Follower:</label> <input type="number" id="w_follower" value="1"></div>
@@ -359,6 +365,7 @@
         /* --- WEIGHTS --- */
         async function saveWeights() {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            
             const weights = {
                 default: parseInt(document.getElementById('w_default').value),
                 vip: parseInt(document.getElementById('w_vip').value),
@@ -367,6 +374,7 @@
                 t2: parseInt(document.getElementById('w_t2').value),
                 t3: parseInt(document.getElementById('w_t3').value)
             };
+            
             const allow = {
                 default: document.getElementById('a_default').checked,
                 vip: document.getElementById('a_vip').checked,
@@ -375,14 +383,26 @@
                 t2: document.getElementById('a_t2').checked,
                 t3: document.getElementById('a_t3').checked
             };
-            const options = { autoRestart: false };
+            
+            const options = {
+                bitsPerTicket: parseInt(document.getElementById('opt_bitsPerTicket').value) // NEW
+            };
 
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: channel, options, weights, allow })
-            });
-            alert("Saved!");
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, weights, allow, options }) // SEND OPTIONS
+                });
+                
+                if(res.ok) {
+                    alert('Settings saved!');
+                } else {
+                    alert('Error saving settings.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         /* --- SOCKETS --- */
