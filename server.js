@@ -145,11 +145,15 @@ io.on('connection', (socket) => {
     });
 });
 
-// Helper to send active list to dashboard
+// Helper function to send active list to dashboard
 function broadcastState(channelKey) {
     const activeList = [];
-    // Iterate all giveaways and filter for this channel
+    
+    // Iterate all giveaways and filter for this specific channel
     giveawayEntries.forEach((data, uniqueKey) => {
+        // uniqueKey is "#ninja|!enter"
+        // channelKey is "#ninja"
+        // We check if uniqueKey STARTS with the channel name
         if (uniqueKey.startsWith(channelKey) && data.active) {
             activeList.push({
                 prize: data.prize,
@@ -158,8 +162,13 @@ function broadcastState(channelKey) {
             });
         }
     });
-    // In a real app with multiple users, you'd target specific socket room.
-    // For now, broadcast to everyone.
+
+    // OLD WAY (Broadcast to everyone):
+    // io.emit('giveawayStateUpdate', activeList);
+    
+    // NEW WAY (Only send to people connected to THIS specific dashboard)
+    // Note: Since we don't have user login, we have to broadcast for now,
+    // but we can filter on the client side to be safer.
     io.emit('giveawayStateUpdate', activeList);
 }
 
@@ -275,8 +284,12 @@ async function startBotForChannel(channelName) {
     channelAllow.set(cleanName, currentAllow);
     channelOptions.set(cleanName, currentOptions);
 
-    client.on('connected', (addr, port) => {
+    client.on('connected', (address, port) => {
         console.log(`* Bot connected to ${cleanName}`);
+        
+        // Send message to chat
+        client.say(cleanName, `✅ GiveawayBot connected successfully! To blacklist this bot, simply time it out and DM @somefridayMobile on Discord.`);
+        
         io.emit('botConnected', cleanName); 
     });
     

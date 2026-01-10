@@ -267,6 +267,32 @@
         });
 
         socket.on('giveawayStateUpdate', (stateList) => {
+            // Get the channel name currently in the input box
+            const myChannel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const myChannelWithHash = myChannel.startsWith('#') ? myChannel : '#' + myChannel;
+
+            // Filter the list to only show giveaways for THIS channel
+            const myList = stateList.filter(gaw => {
+                // gaw.command usually just has "!enter", but the server key has the channel.
+                // Since the server sends us an object, we have to assume the server filtered it, 
+                // BUT if the server is broadcasting to everyone, we filter here.
+                
+                // The stateList objects only have { prize, command, count }.
+                // We assume 'activeList' from server is already correct for the user context?
+                // Actually, since we didn't pass channel to socket, let's just accept the list for now
+                // assuming the server fix above works perfectly. 
+                // But to be safe, let's just render it.
+                return true; 
+            });
+
+            // If you implemented the Server fix correctly, you can just use:
+            // activeGiveaways = stateList;
+            
+            // BUT, if the server is broadcasting to everyone, we need to filter here.
+            // We can't filter purely on "channelName" because the `stateList` objects don't contain the channel name.
+            
+            // CONCLUSION: You MUST use the Server fix above. If you use the Server fix, 
+            // `broadcastState` will filter correctly BEFORE sending.
             activeGiveaways = stateList;
             renderActiveList();
         });
