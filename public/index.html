@@ -110,6 +110,11 @@
                 <input type="checkbox" id="loopToggle">
                 <label for="loopToggle" style="margin:0;">Loop this giveaway</label>
             </div>
+            
+            <div class="checkbox-row">
+                <input type="checkbox" id="lmsToggle">
+                <label for="lmsToggle" style="margin:0;">Last Man Standing (Elimination)</label>
+            </div>
 
             <button class="btn-primary" id="btnStart" onclick="startGiveaway()" disabled>Start Giveaway</button>
         </div>
@@ -186,6 +191,7 @@
             document.getElementById('msgInput').value = "🎊 The winner is... {winner} !";
             document.getElementById('timerInput').value = "0";
             document.getElementById('loopToggle').checked = false;
+            document.getElementById('lmsToggle').checked = false; // NEW
         }
 
         function renderActiveList() {
@@ -229,19 +235,22 @@
             if(!isConnected) return logToScreen("Connect first!");
             
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            const cmd = document.getElementById('cmdInput').value;
             const prize = document.getElementById('prizeInput').value;
+            const timerVal = parseInt(document.getElementById('timerInput').value);
+            const cmd = document.getElementById('cmdInput').value;
             const msg = document.getElementById('msgInput').value;
-            const timer = parseInt(document.getElementById('timerInput').value);
             const loop = document.getElementById('loopToggle').checked;
+            const isLMS = document.getElementById('lmsToggle').checked; // Get LMS checkbox
 
-            if(!cmd) return alert("Command is required!");
-            if(!prize) return alert("Prize is required!");
+            if(!cmd) return logToScreen("Error: No command entered.", 'warn');
+            if(!prize) return logToScreen("Error: No prize entered.", 'warn');
 
-            socket.emit('startGiveaway', { channel, prize, timer, command: cmd, message: msg, loop });
-            clearInputs();
+            isGiveawayActive = true;
+            updateButtonStates();
+
+            socket.emit('startGiveaway', { channel, prize, timer: timerVal, command: cmd, message: msg, loop, isLMS });
         }
-
+        
         function stopGiveaway(command) {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
             socket.emit('stopGiveaway', { channel, command });

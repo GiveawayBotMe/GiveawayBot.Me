@@ -2,11 +2,12 @@
 const mongoose = require('mongoose');
 
 const GiveawayConfigSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // e.g., "Sub Night", "Friday Fun"
-    command: { type: String, required: true, default: '!giveaway' }, // Custom command
-    winnerMessage: { type: String, default: "Congratulations {winner}! You won!" }, // {winner} is a placeholder
-    prize: { type: String, default: "Mystery Prize" }, // Default prize text
+    name: { type: String, required: true }, 
+    command: { type: String, required: true, default: '!giveaway' }, 
+    winnerMessage: { type: String, default: "Congratulations {winner}!" }, 
+    prize: { type: String, default: "Mystery Prize" }, 
     timer: { type: Number, default: 0 },
+    isLMS: { type: Boolean, default: false }, // NEW: Last Man Standing toggle
     weights: {
         default: { type: Number, default: 1 },
         vip: { type: Number, default: 1 },
@@ -26,17 +27,8 @@ const GiveawayConfigSchema = new mongoose.Schema({
 });
 
 const SettingsSchema = new mongoose.Schema({
-    twitchId: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    username: {
-        type: String,
-        required: true
-    },
-    
-    // Global Options (Auto-restart applies to all for now)
+    twitchId: { type: String, required: true, unique: true },
+    username: { type: String, required: true },
     options: {
         followerOnly: { type: Boolean, default: false },
         subOnly: { type: Boolean, default: false },
@@ -45,8 +37,6 @@ const SettingsSchema = new mongoose.Schema({
         bitsPerEntry: { type: Number, default: 0 },
         autoRestart: { type: Boolean, default: false }
     },
-
-    // Store Multiple Giveaway Presets
     giveaways: [GiveawayConfigSchema]
 });
 
