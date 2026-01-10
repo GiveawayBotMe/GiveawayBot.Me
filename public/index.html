@@ -6,126 +6,161 @@
     <title>Giveaway Bot Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #18181b; color: white; display: flex; justify-content: center; padding-top: 20px; margin: 0; }
-        .container { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .container { background: #2d2d2d; padding: 20px; border-radius: 12px; width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         h2 { text-align: center; color: #9147ff; margin-top: 0; }
         
-        .section { border-bottom:1px solid #444; padding-bottom: 20px; margin-bottom: 20px; }
-        .section:last-child { border: none; }
-        
+        /* TABS */
+        .tabs { display: flex; border-bottom: 1px solid #444; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; color: #aaa; font-weight: bold; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab:hover { color: white; background: #383838; }
+        .tab.active { color: #9147ff; border-bottom: 2px solid #9147ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* CONNECT */
+        .control-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; border-radius: 4px; border: 1px solid #444; background: #18181b; color: white; margin-bottom: 10px; }
         
-        input, select, button {
-            width: 100%; padding: 10px; box-sizing: border-box;
-            border-radius: 4px; border: 1px solid #444; background: #18181b; color: white;
-            margin-bottom: 10px;
-        }
-        
-        button { cursor: pointer; font-weight: bold; transition: 0.2s; }
+        /* BUTTONS */
+        button { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; margin-bottom: 5px; }
         button:disabled { background: #555; color: #888; cursor: not-allowed; opacity: 0.5; }
-        .btn-primary { background: #9147ff; }
+        .btn-primary { background: #9147ff; color: white; }
         .btn-primary:hover:not(:disabled) { background: #772ce8; }
-        .btn-danger { background: #ff4f4d; }
+        .btn-danger { background: #ff4f4d; color: white; }
         .btn-danger:hover:not(:disabled) { background: #e64644; }
         .btn-warning { background: #ff9f4d; color: white; }
-        .btn-warning:hover { background: #e68e44; }
-        .btn-edit { background: #444; font-size: 0.8em; padding: 5px; }
-        .btn-edit:hover { background: #555; }
-        .btn-connect { background: #00c853; }
+        .btn-edit { background: #444; font-size: 0.8em; padding: 5px; width: auto; }
+        .btn-connect { background: #00c853; width: auto; margin-top: 10px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
 
-        .active-item { background: #383838; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 4px solid #9147ff; }
-        .active-info h4 { margin: 0; color: #9147ff; }
-        .active-info p { margin: 2px 0; font-size: 0.85em; color: #ccc; }
-        .active-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-        .btn-sm { padding: 5px; font-size: 0.8em; flex: 1; }
+        /* LISTS */
+        .list-item { background: #383838; padding: 10px; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #9147ff; }
+        .list-info h4 { margin: 0; color: #9147ff; }
+        .list-info p { margin: 2px 0; font-size: 0.85em; color: #ccc; }
+        .list-actions { display: flex; gap: 5px; margin-top: 5px; }
+        .btn-sm { padding: 5px; font-size: 0.8em; width: auto; }
 
-        .console-box {
-            background: #000; border: 1px solid #444; color: #0f0;
-            font-family: 'Courier New', Courier, monospace; font-size: 12px;
-            height: 150px; overflow-y: scroll; padding: 10px; margin-top: 20px;
-            border-radius: 4px; text-align: left;
-        }
+        /* FORM ROWS */
+        .form-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .form-row input[type="number"] { width: 60px; }
+        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #9147ff; }
+        
+        /* CONSOLE */
+        .console-box { background: #000; border: 1px solid #444; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; height: 100px; overflow-y: scroll; padding: 10px; border-radius: 4px; text-align: left; }
         .log-entry { margin-bottom: 2px; border-bottom: 1px solid #111; }
         .log-time { color: #888; margin-right: 5px; }
-
-        .links { text-align: center; margin-top: 20px; }
-        .links a { color: #9147ff; text-decoration: none; margin: 0 10px; font-size: 0.9em; }
-        .links a:hover { text-decoration: underline; }
-        
-        .checkbox-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #9147ff; }
     </style>
 </head>
 <body>
 
-    <div class="container">        
-    <iframe 
-            src="https://somerewardsfriday.me/pages/giveawaybotme" 
-            width="100%" 
-            height="500px" 
-            style="border:none; border-radius:8px; margin-bottom:20px;"
-            title="GiveawayBot.Me Tips">
-        </iframe>
-
+    <div class="container">
         <h2>Bot Control</h2>
 
-        <!-- 1. Connect -->
-        <div class="section">
+        <!-- 1. CONNECT -->
+        <div class="control-group">
             <label>Streamer Username:</label>
             <div style="display:flex; gap:5px; margin-bottom:0;">
-                <input type="text" id="channelInput" placeholder="e.g. ninja" onchange="updateLinks()">
-                <button class="btn-connect" id="btnConnect" style="width:auto;" onclick="connectBot()">Connect</button>
+                <input type="text" id="channelInput" placeholder="e.g. ninja" onchange="handleConnect()">
+                <button class="btn-connect" id="btnConnect" onclick="connectBot()">Connect</button>
             </div>
         </div>
 
-        <!-- 2. Active Giveaways List -->
-        <div class="section">
+        <!-- 2. TABS -->
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('active')">Active Giveaways</div>
+            <div class="tab" onclick="openTab('new')">Start New</div>
+            <div class="tab" onclick="openTab('presets')">Presets</div>
+            <div class="tab" onclick="openTab('weights')">Weights & Roles</div>
+        </div>
+
+        <!-- 3. TAB CONTENT: ACTIVE -->
+        <div id="active" class="tab-content active">
             <label>Active Giveaways:</label>
             <div id="activeList">
                 <p style="color: #777; font-style: italic;">No giveaways running.</p>
             </div>
         </div>
 
-        <!-- 3. Start New Giveaway -->
-        <div class="section">
+        <!-- 4. TAB CONTENT: NEW -->
+        <div id="new" class="tab-content">
             <label>Start New Giveaway:</label>
             
-            <label>Load Preset (Optional):</label>
+            <label>Select Preset:</label>
             <select id="presetSelect" onchange="loadPreset()">
                 <option value="">-- Select a Preset --</option>
             </select>
 
-            <label>Command:</label>
-            <input type="text" id="cmdInput" value="!enter">
-
-            <label>Prize Name:</label>
-            <input type="text" id="prizeInput" placeholder="e.g. $10 Gift Card">
-            
-            <label>Winner Message (use {winner}):</label>
-            <input type="text" id="msgInput" value="🎊 The winner is... {winner} !">
-
-            <label>Timer (minutes, 0 = manual):</label>
-            <input type="number" id="timerInput" placeholder="0" value="0" min="0">
-            
-            <div class="checkbox-row">
-                <input type="checkbox" id="loopToggle">
-                <label for="loopToggle" style="margin:0;">Loop this giveaway</label>
+            <div class="form-row">
+                <label>Command:</label>
+                <input type="text" id="cmdInput" value="!enter">
             </div>
-            
-            <div class="checkbox-row">
-                <input type="checkbox" id="lmsToggle">
-                <label for="lmsToggle" style="margin:0;">Last Man Standing (Elimination)</label>
+
+            <div class="form-row">
+                <label>Prize:</label>
+                <input type="text" id="prizeInput" placeholder="e.g. $10 Gift Card">
+            </div>
+
+            <div class="form-row">
+                <label>Winner Msg:</label>
+                <input type="text" id="msgInput" value="🎊 The winner is... {winner} !">
+            </div>
+
+            <div class="form-row">
+                <label>Timer (min):</label>
+                <input type="number" id="timerInput" placeholder="0" value="0" min="0">
+            </div>
+
+            <div class="form-row">
+                <input type="checkbox" id="loopToggle"> <label style="margin:0">Loop</label>
+                <input type="checkbox" id="lmsToggle"> <label style="margin:0">Last Man Standing</label>
             </div>
 
             <button class="btn-primary" id="btnStart" onclick="startGiveaway()" disabled>Start Giveaway</button>
         </div>
 
-        <!-- 4. Console -->
+        <!-- 5. TAB CONTENT: PRESETS -->
+        <div id="presets" class="tab-content">
+            <label>Create New Preset:</label>
+            <div class="form-row"><label>Name:</label> <input type="text" id="gName"></div>
+            <div class="form-row"><label>Command:</label> <input type="text" id="gCommand"></div>
+            <div class="form-row"><label>Msg:</label> <input type="text" id="gMsg"></div>
+            <div class="form-row"><label>Prize:</label> <input type="text" id="gPrize"></div>
+            <div class="form-row"><label>Timer:</label> <input type="number" id="gTimer" value="0"></div>
+            <div class="form-row"><input type="checkbox" id="gIsLMS"> <label style="margin:0">LMS Mode</label></div>
+            <button onclick="createPreset()">Create Preset</button>
+
+            <hr style="border-color: #444; margin: 20px 0;">
+            <label>Saved Presets:</label>
+            <div id="presetListDisplay"></div>
+        </div>
+
+        <!-- 6. TAB CONTENT: WEIGHTS -->
+        <div id="weights" class="tab-content">
+            <label>Weights & Roles</label>
+            <div class="form-row"><label>Default:</label> <input type="number" id="w_default" value="1"></div>
+            <div class="form-row"><label>Follower:</label> <input type="number" id="w_follower" value="1"></div>
+            <div class="form-row"><label>VIP:</label> <input type="number" id="w_vip" value="5"></div>
+            <div class="form-row"><label>Mod:</label> <input type="number" id="w_mod" value="10"></div>
+            <div class="form-row"><label>T1:</label> <input type="number" id="w_t1" value="5"></div>
+            <div class="form-row"><label>T2:</label> <input type="number" id="w_t2" value="10"></div>
+            <div class="form-row"><label>T3:</label> <input type="number" id="w_t3" value="20"></div>
+
+            <hr style="border-color: #444; margin: 20px 0;">
+            <label>Allowances (Check to Allow):</label>
+            <div class="form-row"><input type="checkbox" id="a_default" checked> <label style="margin:0">Default</label></div>
+            <div class="form-row"><input type="checkbox" id="a_vip" checked> <label style="margin:0">VIP</label></div>
+            <div class="form-row"><input type="checkbox" id="a_mod" checked> <label style="margin:0">Mod</label></div>
+            <div class="form-row"><input type="checkbox" id="a_t1" checked> <label style="margin:0">T1</label></div>
+            <div class="form-row"><input type="checkbox" id="a_t2" checked> <label style="margin:0">T2</label></div>
+            <div class="form-row"><input type="checkbox" id="a_t3" checked> <label style="margin:0">T3</label></div>
+
+            <button class="btn-primary" onclick="saveWeights()">Save Weights</button>
+        </div>
+
+        <!-- 7. CONSOLE -->
         <div class="console-box" id="console"><div class="log-entry"><span class="log-time">System:</span> Ready.</div></div>
 
-        <div class="links">
-            <a href="#" id="settingsLink">Weights & Roles</a>
-            <a href="#" id="gawLink">Manage Presets</a>
-        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -145,80 +180,10 @@
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
-        function updateLinks() {
-            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            if (channel) {
-                document.getElementById('settingsLink').href = `settings.html?user=${channel}`;
-                document.getElementById('gawLink').href = `giveaways.html?user=${channel}`;
-                loadPresets(channel);
-            }
-        }
-
-        async function loadPresets(channel) {
-            if(!channel) channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            if(!channel) return;
-            try {
-                const res = await fetch(`/api/settings?username=${channel}`);
-                const data = await res.json();
-                savedPresets = data.giveaways || [];
-                const select = document.getElementById('presetSelect');
-                select.innerHTML = '<option value="">-- Select a Preset --</option>';
-                savedPresets.forEach((p, idx) => {
-                    const opt = document.createElement('option');
-                    opt.value = idx;
-                    opt.innerText = `${p.name} (${p.command})`;
-                    select.appendChild(opt);
-                });
-            } catch(e) { console.error(e); }
-        }
-
-        function loadPreset() {
-            const idx = document.getElementById('presetSelect').value;
-            if (idx === "") return; 
-
-            const p = savedPresets[idx];
-            document.getElementById('cmdInput').value = p.command;
-            document.getElementById('prizeInput').value = p.prize;
-            document.getElementById('msgInput').value = p.winnerMessage;
-            document.getElementById('timerInput').value = p.timer || 0;
-            logToScreen(`Loaded preset: ${p.name}`);
-        }
-
-        function clearInputs() {
-            document.getElementById('presetSelect').value = "";
-            document.getElementById('cmdInput').value = "!enter";
-            document.getElementById('prizeInput').value = "";
-            document.getElementById('msgInput').value = "🎊 The winner is... {winner} !";
-            document.getElementById('timerInput').value = "0";
-            document.getElementById('loopToggle').checked = false;
-            document.getElementById('lmsToggle').checked = false; // NEW
-        }
-
-        function renderActiveList() {
-            const listDiv = document.getElementById('activeList');
-            listDiv.innerHTML = '';
-
-            if (activeGiveaways.length === 0) {
-                listDiv.innerHTML = '<p style="color: #777; font-style: italic;">No giveaways running.</p>';
-                return;
-            }
-
-            activeGiveaways.forEach((gaw) => {
-                const div = document.createElement('div');
-                div.className = 'active-item';
-                div.innerHTML = `
-                    <div class="active-info">
-                        <h4>${gaw.prize}</h4>
-                        <p>Command: ${gaw.command} | Entries: ${gaw.count || 0}</p>
-                    </div>
-                    <div class="active-actions">
-                        <button class="btn-edit btn-sm" onclick="editGiveaway('${gaw.command}')">Edit</button>
-                        <button class="btn-warning btn-sm" onclick="stopLoop('${gaw.command}')">Stop Loop</button>
-                        <button class="btn-danger btn-sm" onclick="stopGiveaway('${gaw.command}')">Stop</button>
-                    </div>
-                `;
-                listDiv.appendChild(div);
-            });
+        function openTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
         }
 
         function connectBot() {
@@ -231,89 +196,208 @@
             socket.emit('joinStreamer', channel);
         }
 
+        function handleConnect() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if(channel && !isConnected) {
+                connectBot();
+            }
+        }
+
+        /* --- ACTIVE LIST LOGIC --- */
+        function renderActiveList() {
+            const listDiv = document.getElementById('activeList');
+            listDiv.innerHTML = '';
+            if (activeGiveaways.length === 0) {
+                listDiv.innerHTML = '<p style="color: #777; font-style: italic;">No giveaways running.</p>';
+                return;
+            }
+            activeGiveaways.forEach((gaw) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <div class="list-info"><h4>${gaw.prize}</h4><p>Cmd: ${gaw.command} | Entries: ${gaw.count || 0}</p></div>
+                    <div class="list-actions">
+                        <button class="btn-edit btn-sm" onclick="editGiveaway('${gaw.command}')">Edit</button>
+                        <button class="btn-warning btn-sm" onclick="stopLoop('${gaw.command}')">Stop Loop</button>
+                        <button class="btn-danger btn-sm" onclick="stopGiveaway('${gaw.command}')">Stop</button>
+                    </div>
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+
+        /* --- START GIVEAWAY --- */
         function startGiveaway() {
             if(!isConnected) return logToScreen("Connect first!");
-            
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const channelWithHash = channel.startsWith('#') ? channel : '#' + channel;
+
             const prize = document.getElementById('prizeInput').value;
             const timerVal = parseInt(document.getElementById('timerInput').value);
             const cmd = document.getElementById('cmdInput').value;
             const msg = document.getElementById('msgInput').value;
             const loop = document.getElementById('loopToggle').checked;
-            const isLMS = document.getElementById('lmsToggle').checked; // Get LMS checkbox
+            const isLMS = document.getElementById('lmsToggle').checked;
 
             if(!cmd) return logToScreen("Error: No command entered.", 'warn');
             if(!prize) return logToScreen("Error: No prize entered.", 'warn');
 
-            isGiveawayActive = true;
-            updateButtonStates();
-
-            socket.emit('startGiveaway', { channel, prize, timer: timerVal, command: cmd, message: msg, loop, isLMS });
+            isGiveawayActive = true; // Ideally track per giveaway, but for now global is fine
+            
+            socket.emit('startGiveaway', { channel: channelWithHash, prize, timer: timerVal, command: cmd, message: msg, loop, isLMS });
+            
+            // Clear inputs
+            document.getElementById('prizeInput').value = "";
+            document.getElementById('loopToggle').checked = false;
+            document.getElementById('lmsToggle').checked = false;
         }
-        
-        function stopGiveaway(command) {
+
+        function stopGiveaway(cmd) {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            socket.emit('stopGiveaway', { channel, command });
+            const channelWithHash = channel.startsWith('#') ? channel : '#' + channel;
+            socket.emit('stopGiveaway', { channel: channelWithHash, command: cmd });
         }
 
-        function stopLoop(command) {
+        function stopLoop(cmd) {
             const channel = document.getElementById('channelInput').value.trim().toLowerCase();
-            socket.emit('stopLoop', { channel, command });
+            const channelWithHash = channel.startsWith('#') ? channel : '#' + channel;
+            socket.emit('stopLoop', { channel: channelWithHash, command: cmd });
         }
 
-        function editGiveaway(command) {
-            alert(`Edit is ready for Timer/Loop updates via server logic.\nCurrent Command: ${command}`);
+        function editGiveaway(cmd) { alert(`Editing ${cmd}`); }
+
+        /* --- PRESETS --- */
+        async function loadPresets() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            if(!channel) return;
+            try {
+                const res = await fetch(`/api/settings?username=${channel}`);
+                const data = await res.json();
+                savedPresets = data.giveaways || [];
+                renderPresets();
+                updatePresetDropdown();
+            } catch(e) {}
         }
 
+        function renderPresets() {
+            const list = document.getElementById('presetListDisplay');
+            list.innerHTML = '';
+            savedPresets.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                    <div class="list-info"><h4>${p.name}</h4><p>${p.command}</p></div>
+                    <button class="btn-danger btn-sm" onclick="deletePreset(${i})">Delete</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function updatePresetDropdown() {
+            const select = document.getElementById('presetSelect');
+            select.innerHTML = '<option value="">-- Select a Preset --</option>';
+            savedPresets.forEach((p, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `${p.name} (${p.command})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function loadPreset() {
+            const i = document.getElementById('presetSelect').value;
+            if (i !== "") {
+                const p = savedPresets[i];
+                document.getElementById('cmdInput').value = p.command;
+                document.getElementById('prizeInput').value = p.prize;
+                document.getElementById('msgInput').value = p.winnerMessage;
+                document.getElementById('timerInput').value = p.timer || 0;
+                document.getElementById('loopToggle').checked = p.isLMS ? false : true;
+                document.getElementById('lmsToggle').checked = p.isLMS || false;
+            }
+        }
+
+        async function createPreset() {
+            const name = document.getElementById('gName').value;
+            const command = document.getElementById('gCommand').value;
+            const winnerMessage = document.getElementById('gMsg').value;
+            const prize = document.getElementById('gPrize').value;
+            const timer = parseInt(document.getElementById('gTimer').value) || 0;
+            const isLMS = document.getElementById('gIsLMS').checked;
+
+            if(!name || !command) return alert("Name and Command required");
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+
+            const res = await fetch(`/api/settings?username=${channel}`);
+            const settings = await res.json();
+            
+            const newPreset = { name, command, winnerMessage, prize, timer, isLMS, weights: { default: 1, vip: 1, mod: 1, t1: 1, t2: 1, t3: 1 }, allow: { default: true, vip: true, mod: true, t1: true, t2: true, t3: true } };
+
+            if(!settings.giveaways) settings.giveaways = [];
+            settings.giveaways.push(newPreset);
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: channel, giveaways: settings.giveaways })
+            });
+
+            loadPresets();
+            alert("Created!");
+        }
+
+        async function deletePreset(i) {
+            if(!confirm("Delete?")) return;
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const res = await fetch(`/api/settings?username=${channel}`);
+            const settings = await res.json();
+            settings.giveaways.splice(i, 1);
+            await fetch('/api/settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: channel, giveaways: settings.giveaways }) });
+            loadPresets();
+        }
+
+        /* --- WEIGHTS --- */
+        async function saveWeights() {
+            const channel = document.getElementById('channelInput').value.trim().toLowerCase();
+            const weights = {
+                default: parseInt(document.getElementById('w_default').value),
+                vip: parseInt(document.getElementById('w_vip').value),
+                mod: parseInt(document.getElementById('w_mod').value),
+                t1: parseInt(document.getElementById('w_t1').value),
+                t2: parseInt(document.getElementById('w_t2').value),
+                t3: parseInt(document.getElementById('w_t3').value)
+            };
+            const allow = {
+                default: document.getElementById('a_default').checked,
+                vip: document.getElementById('a_vip').checked,
+                mod: document.getElementById('a_mod').checked,
+                t1: document.getElementById('a_t1').checked,
+                t2: document.getElementById('a_t2').checked,
+                t3: document.getElementById('a_t3').checked
+            };
+            const options = { autoRestart: false };
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: channel, options, weights, allow })
+            });
+            alert("Saved!");
+        }
+
+        /* --- SOCKETS --- */
         socket.on('logMessage', (msg) => logToScreen(msg));
-        
         socket.on('botConnected', (channel) => {
             isConnected = true;
             document.getElementById('btnConnect').innerText = "Connected";
             document.getElementById('btnConnect').disabled = true;
             document.getElementById('btnStart').disabled = false;
             logToScreen(`Connected to #${channel}`);
+            loadPresets(); // Load data when connected
         });
-
         socket.on('giveawayStateUpdate', (stateList) => {
-            // Get the channel name currently in the input box
-            const myChannel = document.getElementById('channelInput').value.trim().toLowerCase();
-            const myChannelWithHash = myChannel.startsWith('#') ? myChannel : '#' + myChannel;
-
-            // Filter the list to only show giveaways for THIS channel
-            const myList = stateList.filter(gaw => {
-                // gaw.command usually just has "!enter", but the server key has the channel.
-                // Since the server sends us an object, we have to assume the server filtered it, 
-                // BUT if the server is broadcasting to everyone, we filter here.
-                
-                // The stateList objects only have { prize, command, count }.
-                // We assume 'activeList' from server is already correct for the user context?
-                // Actually, since we didn't pass channel to socket, let's just accept the list for now
-                // assuming the server fix above works perfectly. 
-                // But to be safe, let's just render it.
-                return true; 
-            });
-
-            // If you implemented the Server fix correctly, you can just use:
-            // activeGiveaways = stateList;
-            
-            // BUT, if the server is broadcasting to everyone, we need to filter here.
-            // We can't filter purely on "channelName" because the `stateList` objects don't contain the channel name.
-            
-            // CONCLUSION: You MUST use the Server fix above. If you use the Server fix, 
-            // `broadcastState` will filter correctly BEFORE sending.
             activeGiveaways = stateList;
             renderActiveList();
-        });
-
-        // AUTO-FILL FROM URL
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlUser = urlParams.get('user');
-            if (urlUser) {
-                document.getElementById('channelInput').value = urlUser;
-                updateLinks();
-            }
         });
     </script>
 </body>
