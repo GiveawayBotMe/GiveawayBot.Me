@@ -319,28 +319,41 @@ app.post('/api/giveaway/stop-loop', ensureAuthenticated, async (req, res) => {
 // ================= ROUTES: AUTH =================
 
 app.get('/auth/twitch', (req, res) => {
+    // 🔥 FIX: Check if user came from a specific page (Referer)
+    const referer = req.get('Referer');
+    
+    // Default to dashboard if no referer found, or if referer is external
+    // We save this to req.session so we can use it after Twitch redirects back
+    if (referer && referer.includes(process.env.SITE_URL || 'http://localhost:3000')) {
+        req.session.returnTo = referer;
+    } else {
+        req.session.returnTo = `${SITE_URL}/dashboard`;
+    }
+
     const scope = 'chat:edit';
     const state = crypto.randomBytes(16).toString('hex'); 
     req.session.state = state;
+    
     const authUrl = `https://id.twitch.tv/oauth2/authorize` +
         `?client_id=${TWITCH_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
         `&response_type=code` +
         `&scope=${encodeURIComponent(scope)}` +
         `&state=${state}`;
+    
     res.redirect(authUrl);
 });
 
 app.get('/auth/twitch/callback', async (req, res) => {
     const { code, state } = req.query;
     
-    // 🔥 FIX: Stop immediately if state is wrong (Don't send headers yet)
     if (state !== req.session.state) {
         console.warn('Invalid State detected. Expected:', req.session.state, 'Got:', state);
         return res.status(403).send('Invalid State');
     }
 
     try {
+        // ... (Your existing token fetch logic stays here) ...
         const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
             method: 'post',
             body: new URLSearchParams({
@@ -364,7 +377,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
         req.session.broadcasterName = broadcasterData.login;
         req.session.isAuthenticated = true;
 
-        // Save to DB
         await UserSettings.findOneAndUpdate(
             { broadcasterId: broadcasterData.id },
             { 
@@ -375,8 +387,14 @@ app.get('/auth/twitch/callback', async (req, res) => {
             { upsert: true }
         );
 
-        // 🔥 UPDATE REDIRECT TO INCLUDE USERNAME
-        res.redirect(`${SITE_URL}/dashboard?channel=${broadcasterData.login}&login=success`);
+        // 🔥 FIX: Redirect to the saved URL, or default to Dashboard
+        const destination = req.session.returnTo || `${SITE_URL}/dashboard`;
+        
+        // Clear the returnTo so it doesn't interfere next time
+        delete req.session.returnTo;
+        
+        res.redirect(destination);
+
     } catch (error) {
         console.error('Auth Error:', error);
         res.redirect(`${SITE_URL}?login=failed`);
