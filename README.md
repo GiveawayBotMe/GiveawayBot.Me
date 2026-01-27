@@ -6,28 +6,21 @@ GiveawayBot.Me is a fully-featured, Twitch-integrated giveaway bot designed for 
 
 ### Core Giveaway System
 *   **Multiple Concurrent Giveaways:** Run as many giveaways as you want at the same time (e.g., `!subnight` and `!bits` running simultaneously).
-*   **Weighted Entries:** Configure multipliers for different user roles.
-    *   Default (Viewer), VIP, Moderator, T1, T2, and T3 Subs.
 *   **Role Restrictions:** Toggle which roles are allowed to enter (e.g., Subs only).
 *   **Custom Commands:** Define unique commands for each giveaway (e.g., `!enter`, `!gaw`, `!bonus`).
 *   **Custom Messages:** Personalize the winner announcement message (supports `{winner}` placeholder).
 *   **Silent Entry Logic:** Entries are tracked internally without spamming chat, with periodic status updates.
-*   **Bits Support:** Viewers can enter by cheering bits (Auto-converted to tickets).
-*   **Auto-Restart:** Giveaways can be set to loop automatically after a winner is picked.
 *   **Last Man Standing (LMS):** Eliminate users randomly every 30 seconds until one winner remains.
 
 ### Management Interface
-*   **Unified Dashboard:** A single-page web interface (`index.html`) containing all controls.
+*   **Unified Dashboard:** A single-page web interface (`dashboard.html`) containing all controls.
     *   **Active Giveaways:** View and stop currently running giveaways.
     *   **Start New:** Manually create giveaways with full control (Timer, Loop, LMS).
-    *   **Presets:** Save and load giveaway configurations quickly.
     *   **Weights & Roles:** Configure global multipliers and entry restrictions.
-*   **Real-time Console:** View live logs of entries, errors, and system messages directly in the dashboard.
 
 ### Bot Integration
-*   **Easy Connection:** Simply enter your Twitch channel name in the dashboard to connect.
+*   **Easy Connection:** Simply connect your Twitch account upon loading website.
 *   **Secure Data:** All settings and configurations are stored securely in MongoDB.
-*   **Auto-Disconnect:** Bot automatically leaves the previous channel when you connect to a new one.
 *   **No Twitch API Required:** Basic chat functions work without complex API registration (for entry logic).
 
 ## 🚀 How to Use
@@ -42,7 +35,7 @@ GiveawayBot.Me is a fully-featured, Twitch-integrated giveaway bot designed for 
 
 ## 🔗 Links
 
-*   **Live Dashboard:** [https://giveawaybot-me.onrender.com](https://giveawaybot-me.onrender.com)
+*   **Live Dashboard:** [https://giveawaybot.me](https://giveawaybot.me)
 *   **Feature Requests / Tips:** [https://somerewardsfriday.me/pages/giveawaybotme](https://somerewardsfriday.me/pages/giveawaybotme)
 
 ## 🛠 Tech Stack
