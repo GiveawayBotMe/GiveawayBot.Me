@@ -20,9 +20,22 @@ const app = express();
 // ================= CONFIGURATION =================
 const PORT = process.env.PORT || 3000;
 
-// DOMAIN CONFIGURATION
-const SITE_URL = process.env.SITE_URL || 'http://localhost:3000'; 
-const AUTH_URL = process.env.AUTH_URL || 'http://localhost:3000';
+// 🔥 FIX: Handle Environment Logic for URLS
+const ENV_MODE = process.env.ENVIRONMENT || 'testing';
+
+let SITE_URL = 'http://localhost:3000';
+let AUTH_URL = 'http://localhost:3000';
+
+if (ENV_MODE === 'default') {
+    // Live URLs
+    SITE_URL = 'https://giveawaybot.me';
+    AUTH_URL = 'https://giveawaybot.me';
+} else {
+    // Testing URLs (allow .env override if needed)
+    if (process.env.SITE_URL) SITE_URL = process.env.SITE_URL;
+    if (process.env.AUTH_URL) AUTH_URL = process.env.AUTH_URL;
+}
+
 const BOT_API_URL = process.env.BOT_API_URL || 'http://localhost:3001'; // Default to local bot port
 
 // Session Secret
@@ -41,6 +54,7 @@ mongoose.connect(MONGO_URI, {
 // Twitch App Credentials
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
+// 🔥 CRITICAL: REDIRECT_URI must use AUTH_URL
 const REDIRECT_URI = `${AUTH_URL}/auth/twitch/callback`;
 
 // GiveawayBot.me Credentials
@@ -149,7 +163,6 @@ app.get('/api/settings/weights', ensureAuthenticated, async (req, res) => {
 
 // 3. Get User Info (Fixes "Loading...")
 app.get('/api/me', ensureAuthenticated, (req, res) => {
-    // If we have it in Session, return that
     if (req.session.broadcasterName) {
         return res.json({
             username: req.session.broadcasterName,
@@ -158,32 +171,27 @@ app.get('/api/me', ensureAuthenticated, (req, res) => {
     }
 });
 
-// 4. Get User Avatar (Cached - First DB, then Twitch API)
+// 4. Get User Avatar
 app.get('/api/me/avatar', ensureAuthenticated, async (req, res) => {
     const broadcasterId = req.session.broadcasterId;
 
     try {
-        // 1. Check DB First (Cached)
         const userRecord = await UserSettings.findOne({ broadcasterId: broadcasterId });
         if (userRecord && userRecord.avatarUrl) {
             return res.json({ avatarUrl: userRecord.avatarUrl });
         }
 
-        // 2. Fetch from Twitch API (Cached fallback)
         const response = await fetch(`https://api.twitch.tv/helix/users?id=${broadcasterId}`, {
             headers: { 'Client-Id': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${req.session.accessToken}` }
         });
         const data = await response.json();
         if (data.data && data.data.length > 0) {
             const avatarUrl = data.data[0].profile_image_url;
-            
-            // 3. Cache it in DB (Fast)
             await UserSettings.findOneAndUpdate(
                 { broadcasterId: broadcasterId },
                 { avatarUrl: avatarUrl },
                 { upsert: true }
             );
-            
             res.json({ avatarUrl: avatarUrl });
         } else {
             res.status(404).json({ error: "User not found" });
@@ -203,15 +211,13 @@ app.post('/api/giveaway/start', ensureAuthenticated, async (req, res) => {
     if (!command || !duration || !message) return res.status(400).json({ error: 'Missing fields' });
 
     try {
-        // 1. Get User's Current Weights
         const dbUser = await UserSettings.findOne({ broadcasterId: uid });
         const weights = dbUser ? dbUser.weights : { broadcaster: 1000, moderator: 500, vip: 200, t3: 150, t2: 50, t1: 10, follower: 2, viewer: 1 };
 
-        // 2. 🔥 FIX: Save the Loop State to DB so the webhook knows what to do
         await UserSettings.findOneAndUpdate(
             { broadcasterId: uid },
             { 
-                is_looping: is_looping, // Remember this!
+                is_looping: is_looping,
                 current_prize: prize,
                 current_command: command,
                 current_duration: duration,
@@ -220,7 +226,6 @@ app.post('/api/giveaway/start', ensureAuthenticated, async (req, res) => {
             { upsert: true }
         );
 
-        // 3. Call BOT WORKER API
         let response;
         try {
             response = await fetch(`${BOT_API_URL}/create`, {
@@ -231,7 +236,7 @@ app.post('/api/giveaway/start', ensureAuthenticated, async (req, res) => {
                     command: command,
                     duration: duration,
                     prize: prize,
-                    is_looping: is_looping, // <--- Send this to the bot
+                    is_looping: is_looping,
                     webhook_url: `${AUTH_URL}/webhook`,
                     broadcaster_id: uid
                 })
@@ -244,8 +249,6 @@ app.post('/api/giveaway/start', ensureAuthenticated, async (req, res) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to start');
 
-        // 🔥 FIX: Save the active giveaway ID to the database
-        // This links the server to the bot's timer
         if (data.id) {
             await UserSettings.findOneAndUpdate(
                 { broadcasterId: uid },
@@ -267,7 +270,6 @@ app.post('/api/giveaway/end', ensureAuthenticated, async (req, res) => {
     const channelName = req.session.broadcasterName;
     
     try {
-        // 1. Pass ID in URL, not Body, to match bot's route
         const response = await fetch(`${BOT_API_URL}/end/${giveawayId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -286,12 +288,9 @@ app.get('/api/giveaway/status', ensureAuthenticated, async (req, res) => {
     const uid = req.session.broadcasterId;
     try {
         const userRecord = await UserSettings.findOne({ broadcasterId: uid });
-        
-        // If there is an ID stored in the DB, return it. Otherwise, return null.
         if (userRecord && userRecord.active_giveaway_id) {
             return res.json({ activeId: userRecord.active_giveaway_id });
         }
-        
         return res.json({ activeId: null });
     } catch (error) {
         console.error("Status Fetch Error:", error);
@@ -303,7 +302,6 @@ app.get('/api/giveaway/status', ensureAuthenticated, async (req, res) => {
 app.post('/api/giveaway/stop-loop', ensureAuthenticated, async (req, res) => {
     const uid = req.session.broadcasterId;
     try {
-        // Turn off the loop switch in the database
         await UserSettings.findOneAndUpdate(
             { broadcasterId: uid },
             { is_looping: false }
@@ -319,12 +317,9 @@ app.post('/api/giveaway/stop-loop', ensureAuthenticated, async (req, res) => {
 // ================= ROUTES: AUTH =================
 
 app.get('/auth/twitch', (req, res) => {
-    // 🔥 FIX: Check if user came from a specific page (Referer)
     const referer = req.get('Referer');
     
-    // Default to dashboard if no referer found, or if referer is external
-    // We save this to req.session so we can use it after Twitch redirects back
-    if (referer && referer.includes(process.env.SITE_URL || 'http://localhost:3000')) {
+    if (referer && referer.includes(SITE_URL)) {
         req.session.returnTo = referer;
     } else {
         req.session.returnTo = `${SITE_URL}/dashboard`;
@@ -373,7 +368,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
         });
         const userData = await userResponse.json();
         
-        // Ensure we have user data
         if (!userData.data || userData.data.length === 0) {
             throw new Error("User not found");
         }
@@ -400,16 +394,13 @@ app.get('/auth/twitch/callback', async (req, res) => {
         // 🔥 REDIRECT LOGIC BASED ON .ENV
         // ==========================================
         
-        const mode = process.env.ENVIRONMENT || 'default';
         const channel = broadcasterData.login;
-        
         let destination;
 
-        if (mode === 'testing') {
-            // Localhost Redirect
+        // Use the ENV_MODE variable we set at the top
+        if (ENV_MODE === 'testing') {
             destination = `http://localhost:3000/dashboard?channel=${channel}&login=success`;
         } else {
-            // Live Site Redirect
             destination = `https://giveawaybot.me/dashboard?channel=${channel}&login=success`;
         }
 
@@ -418,10 +409,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
     } catch (error) {
         console.error('Auth Error:', error);
         
-        // Handle error redirect based on environment too
-        const mode = process.env.ENVIRONMENT || 'default';
-        const errorUrl = mode === 'testing' ? 'http://localhost:3000' : 'https://giveawaybot.me';
-        
+        const errorUrl = ENV_MODE === 'testing' ? 'http://localhost:3000' : 'https://giveawaybot.me';
         res.redirect(`${errorUrl}?login=failed`);
     }
 });
@@ -429,7 +417,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
 // ================= WEBHOOK =================
 
 app.post('/webhook', async (req, res) => {
-    // Verify Signature
     const signature = req.headers['x-hub-signature'] || req.headers['x-gawb-signature'];
     if (signature && GAWB_WEBHOOK_SECRET) {
         const hmac = crypto.createHmac('sha256', GAWB_WEBHOOK_SECRET);
@@ -446,31 +433,26 @@ app.post('/webhook', async (req, res) => {
 
 // ================= HELPERS FOR GIVEAWAY LOGIC =================
 
-// 1. Calculate Weighted Winner
 function calculateWeightedWinner(entries, weights) {
     if (!weights) weights = {};
     
     let pool = [];
     
     entries.forEach(entry => {
-        // Default weight
         let multiplier = weights.viewer || 1;
 
-        // Check Subscriber Tier (Takes precedence over badges in this logic)
         if (entry.sub_tier) {
             const tier = entry.sub_tier.toString();
             if (tier === '3000') multiplier = weights.t3 || 1;
             else if (tier === '2000') multiplier = weights.t2 || 1;
             else if (tier === '1000') multiplier = weights.t1 || 1;
         } 
-        // Fallback to Badges if not a sub
         else if (entry.badges) {
             if (entry.badges.broadcaster) multiplier = weights.broadcaster || 1;
             else if (entry.badges.moderator) multiplier = weights.moderator || 1;
             else if (entry.badges.vip) multiplier = weights.vip || 1;
         }
 
-        // Add the user to the pool 'multiplier' times
         for (let i = 0; i < multiplier; i++) {
             pool.push(entry.username);
         }
@@ -482,35 +464,11 @@ function calculateWeightedWinner(entries, weights) {
     return pool[randomIndex];
 }
 
-// 2. Announce via Bot
 async function announceWinner(broadcaster_id, message) {
-    // Note: To send chat as the bot, we need the Bot's User ID.
-    // Since we don't have it here, we can fetch it (slow) or just rely on the fallback.
-    // Ideally, cache the Bot ID globally or in DB.
-    
     console.log(`[Announce] Bot announcement skipped (Implementation needed for Bot ID lookup) or falling back.`);
     throw new Error("Bot ID not implemented, falling back to streamer");
-    
-    /*
-    // If you implement getBotUserId(), uncomment this:
-    const botUserId = await getBotUserId();
-    await fetch(`https://api.twitch.tv/helix/chat/messages`, {
-        method: 'POST',
-        headers: {
-            'Client-Id': TWITCH_CLIENT_ID,
-            'Authorization': `Bearer ${BOT_TOKEN}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            broadcaster_id: broadcaster_id,
-            sender_id: botUserId,
-            message: message
-        })
-    });
-    */
 }
 
-// 3. Announce via Streamer (Fallback)
 async function announceViaStreamer(broadcaster_id, accessToken, message) {
     console.log(`[Announce Fallback] Sending as streamer: ${message}`);
 
@@ -529,14 +487,11 @@ async function announceViaStreamer(broadcaster_id, accessToken, message) {
     });
 }
 
-// ================= MAIN PROCESSOR =================
-
 async function processGiveawayEnd(payload) {
     const { entries, broadcaster_id } = payload;
     
     if (!broadcaster_id) return console.log("User not found in DB for webhook");
 
-    // 1. Fetch User Settings
     const userRecord = await UserSettings.findOne({ broadcasterId: broadcaster_id });
     if (!userRecord) return console.log("User not found in DB for webhook");
 
@@ -544,7 +499,6 @@ async function processGiveawayEnd(payload) {
     if (userRecord.is_looping) {
         console.log(`[Loop] Giveaway ended for ${broadcaster_id}. Restarting...`);
         
-        // Start a new one using the saved settings
         try {
             const nextPrize = userRecord.current_prize || "Nothing";
             const nextCmd = userRecord.current_command || "!join";
@@ -559,7 +513,7 @@ async function processGiveawayEnd(payload) {
                     command: nextCmd,
                     duration: nextDuration,
                     prize: nextPrize,
-                    is_looping: true, // Keep the loop going
+                    is_looping: true,
                     webhook_url: `${AUTH_URL}/webhook`,
                     broadcaster_id: broadcaster_id
                 })
@@ -569,21 +523,16 @@ async function processGiveawayEnd(payload) {
             console.error("[Loop] Failed to restart giveaway:", loopError.message);
         }
 
-        // STOP HERE. Do not pick a winner for a loop, and DO NOT clear the ID
-        // because a new one is taking its place immediately.
         return;
     }
 
-    // 3. NORMAL GIVEAWAY END (Non-looping)
+    // 3. NORMAL GIVEAWAY END
     
-    // 🔥 FIX: Clear the active ID from DB
-    // This tells the frontend poller that the giveaway is gone.
     await UserSettings.findOneAndUpdate(
         { broadcasterId: broadcaster_id },
         { active_giveaway_id: null }
     );
 
-    // Pick Winner
     if (entries && entries.length > 0) {
         const winner = calculateWeightedWinner(entries, userRecord.weights);
         const msg = `🎉 Winner is @${winner}!`;
@@ -600,7 +549,7 @@ async function processGiveawayEnd(payload) {
 // ================= GLOBAL ERROR HANDLING =================
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ UNHANDLED REJECTION:', reason);
-    Sentry.captureException(reason); // Send to Sentry if available
+    Sentry.captureException(reason); 
 });
 
 process.on('uncaughtException', (err) => {
@@ -610,6 +559,7 @@ process.on('uncaughtException', (err) => {
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${ENV_MODE}`);
     console.log(`Auth URL: ${AUTH_URL}`);
     console.log(`Site URL: ${SITE_URL}`);
     console.log(`Bot API: ${BOT_API_URL}`);
