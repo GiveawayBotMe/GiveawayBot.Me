@@ -353,7 +353,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
     }
 
     try {
-        // ... (Your existing token fetch logic stays here) ...
+        // 1. Exchange Code for Access Token
         const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
             method: 'post',
             body: new URLSearchParams({
@@ -367,16 +367,25 @@ app.get('/auth/twitch/callback', async (req, res) => {
         const tokenData = await tokenResponse.json();
         if (tokenData.error) throw new Error(tokenData.error);
 
+        // 2. Get User Data using the Access Token
         const userResponse = await fetch('https://api.twitch.tv/helix/users', {
             headers: { 'Client-Id': TWITCH_CLIENT_ID, 'Authorization': `Bearer ${tokenData.access_token}` }
         });
         const userData = await userResponse.json();
+        
+        // Ensure we have user data
+        if (!userData.data || userData.data.length === 0) {
+            throw new Error("User not found");
+        }
+        
         const broadcasterData = userData.data[0];
 
+        // 3. Set Session Data
         req.session.broadcasterId = broadcasterData.id;
         req.session.broadcasterName = broadcasterData.login;
         req.session.isAuthenticated = true;
 
+        // 4. Save to Database (Upsert)
         await UserSettings.findOneAndUpdate(
             { broadcasterId: broadcasterData.id },
             { 
@@ -387,17 +396,33 @@ app.get('/auth/twitch/callback', async (req, res) => {
             { upsert: true }
         );
 
-        // 🔥 FIX: Redirect to the saved URL, or default to Dashboard
-        const destination = req.session.returnTo || `${SITE_URL}/dashboard`;
+        // ==========================================
+        // 🔥 REDIRECT LOGIC BASED ON .ENV
+        // ==========================================
         
-        // Clear the returnTo so it doesn't interfere next time
-        delete req.session.returnTo;
+        const mode = process.env.ENVIRONMENT || 'default';
+        const channel = broadcasterData.login;
         
+        let destination;
+
+        if (mode === 'testing') {
+            // Localhost Redirect
+            destination = `http://localhost:3000/dashboard?channel=${channel}&login=success`;
+        } else {
+            // Live Site Redirect
+            destination = `https://giveawaybot.me/dashboard?channel=${channel}&login=success`;
+        }
+
         res.redirect(destination);
 
     } catch (error) {
         console.error('Auth Error:', error);
-        res.redirect(`${SITE_URL}?login=failed`);
+        
+        // Handle error redirect based on environment too
+        const mode = process.env.ENVIRONMENT || 'default';
+        const errorUrl = mode === 'testing' ? 'http://localhost:3000' : 'https://giveawaybot.me';
+        
+        res.redirect(`${errorUrl}?login=failed`);
     }
 });
 
