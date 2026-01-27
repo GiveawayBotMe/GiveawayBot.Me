@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GiveawayBot.Me</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding: 20px; color: #e0e0e0; }
+        .container { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        
+        .header { background: #1f1f1f; color: #ffffff; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #333; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #9146FF; background: #333; }
+        .logout { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.9rem; }
+        .logout:hover { color: white; }
+
+        .tabs { display:flex; gap:10px; margin-bottom:0; }
+        .tab-btn { padding: 10px 20px; background: #1f1f1f; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; color: #aaa; border: 1px solid #333; }
+        .tab-btn.active { background: #9146FF; color: white; border-color: #9146FF; }
+
+        .card { background: #1f1f1f; padding: 25px; border-radius: 0 8px 8px 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #333; min-height: 400px; }
+        h2 { margin-top: 0; color: #ffffff; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: white; font-size: 0.9rem; }
+        input[type="text"], input[type="number"] { 
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
+            background: #121212; color: white; 
+        }
+        input:focus { border-color: #9146FF; outline: none; }
+        
+        .btn { display: inline-block; padding: 10px 20px; background: #9146FF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        .btn:hover { background: #772ce8; }
+        .btn-red { background: #e91e63; }
+        .btn-red:hover { background: #c2185b; }
+
+        #status-msg { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+        .success { background: #1b4d3e; color: #81c784; border: 1px solid #1b4d3e; }
+        .error { background: #5c2b29; color: #ff8a80; border: 1px solid #5c2b29; }
+
+        .giveaway-item { padding: 10px; background: #252525; margin-bottom: 10px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <div class="avatar" id="user-avatar"></div>
+                <div>
+                    <h3 style="margin:0;" id="username">Loading...</h3>
+                    <small>Connected Channel</small>
+                </div>
+            </div>
+            <a href="/logout" class="logout">Log Out</a>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('giveaways')">Giveaways</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Weight Settings</button>
+        </div>
+
+        <div id="view-giveaways" style="display:block;">
+            <div class="card">
+                <h2>Start New Giveaway</h2>
+                <form id="create-form">
+                    <div class="form-group">
+                        <label>Prize</label>
+                        <input type="text" id="prize" value="Nothing" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Entry Command (e.g., !join)</label>
+                        <input type="text" id="cmd" value="!join" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (seconds)</label>
+                        <input type="number" id="duration" value="60" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Winner Message</label>
+                        <input type="text" id="message" value="Congrats {user}, you won!" required>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="is_looping" style="width:auto;">
+                        <label for="is_looping" style="margin:0; cursor:pointer;">Loop Giveaway</label>
+                    </div>
+                    <button type="submit" class="btn">Start Giveaway</button>
+                </form>
+                <div id="status-msg"></div>
+                <h2 style="margin-top: 30px;">Active Giveaways</h2>
+                <div id="active-list">
+                    <p style="color: white;">No active giveaways running.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-settings" style="display:none;">
+            <div class="card">
+                <h2>Configure Weights</h2>
+                <p style="color: white; font-size: 0.9rem;">Adjust the chance of winning for each user tier.</p>
+                <form id="weights-form">
+                    <div class="form-group"><label>Broadcaster</label><input type="number" name="broadcaster" value="1"></div>
+                    <div class="form-group"><label>Moderator</label><input type="number" name="moderator" value="1"></div>
+                    <div class="form-group"><label>VIP</label><input type="number" name="vip" value="1"></div>
+                    <div class="form-group"><label>Tier 3 Sub</label><input type="number" name="t3" value="1"></div>
+                    <div class="form-group"><label>Tier 2 Sub</label><input type="number" name="t2" value="5"></div>
+                    <div class="form-group"><label>Tier 1 Sub</label><input type="number" name="t1" value="1"></div>
+                    <div class="form-group"><label>Follower</label><input type="number" name="follower" value="1"></div>
+                    <div class="form-group"><label>Viewer (Default)</label><input type="number" name="viewer" value="1"></div>
+                    <button type="submit" class="btn">Save Weights</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function initDashboard() {
+            console.log("--- INIT ---");
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === 'success') {
+                showStatus('Logged in successfully!', 'success');
+                window.history.replaceState({}, document.title, "/dashboard");
+            }
+            
+            console.log("Fetching User...");
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                if (data.username) {
+                    document.getElementById('username').innerText = data.username;
+                } else {
+                    document.getElementById('username').innerText = "Unknown User";
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('username').innerText = "Error";
+            }
+
+            console.log("Fetching Avatar...");
+            try {
+                const res = await fetch('/api/me/avatar');
+                const data = await res.json();
+                if (data.avatarUrl) {
+                    const avatarDiv = document.getElementById('user-avatar');
+                    avatarDiv.style.backgroundImage = `url(${data.avatarUrl})`;
+                    avatarDiv.style.backgroundSize = 'cover';
+                    avatarDiv.style.backgroundColor = 'transparent';
+                }
+            } catch (e) {
+                console.log("Avatar fetch failed");
+            }
+
+            console.log("Loading Weights...");
+            loadWeights();
+            console.log("--- END ---");
+        }
+
+        async function loadWeights() {
+            try {
+                const res = await fetch('/api/settings/weights');
+                const data = await res.json();
+                for (const key in data) {
+                    const input = document.querySelector(`input[name="${key}"]`);
+                    if (input) input.value = data[key];
+                }
+            } catch (e) {
+                console.error("Failed to load weights", e);
+            }
+        }
+
+        document.getElementById('weights-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const res = await fetch('/api/settings/weights', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showStatus('Weights Saved!', 'success');
+                } else {
+                    showStatus('Failed to save weights', 'error');
+                }
+            } catch (err) {
+                showStatus('Error: ' + err.message, 'error');
+            }
+        });
+
+        document.getElementById('create-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                command: document.getElementById('cmd').value,
+                duration: document.getElementById('duration').value,
+                message: document.getElementById('message').value,
+                is_looping: document.getElementById('is_looping').checked,
+                prize: document.getElementById('prize').value
+            };
+
+            try {
+                const res = await fetch('/api/giveaway/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    showStatus('Giveaway Started!', 'success');
+                    addActiveGiveaway(result.id, data.command, data.is_looping);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                showStatus('Error: ' + err.message, 'error');
+            }
+        });
+
+        function addActiveGiveaway(id, command, isLooping) {
+            const list = document.getElementById('active-list');
+            if(list.innerText.includes("No active")) list.innerHTML = '';
+
+            const div = document.createElement('div');
+            div.className = 'giveaway-item';
+            div.id = `item-${id}`;
+            div.innerHTML = `
+                <span>
+                    <strong>${command}</strong> 
+                    ${isLooping ? '<span style="color:#9146FF; font-size:0.8rem; margin-left:5px;">(LOOP)</span>' : ''}
+                </span>
+                <button class="btn btn-red" onclick="endGiveaway('${id}')">End Early</button>
+            `;
+            list.appendChild(div);
+        }
+
+		async function endGiveaway(id) {
+		    if(!confirm("Are you sure you want to end this giveaway early?")) return;
+
+		    try {
+		        // 1. 🔥 FIX: Tell the Server to stop looping FIRST
+		        // We use a different endpoint or flag to tell the server "This loop is over"
+		        await fetch('/api/giveaway/stop-loop', {
+		            method: 'POST',
+		            headers: { 'Content-Type': 'application/json' }
+		        });
+
+		        // 2. Then tell the Bot to end the timer
+		        const res = await fetch(`/api/giveaway/end`, {
+		            method: 'POST',
+		            headers: { 'Content-Type': 'application/json' },
+		            body: JSON.stringify({ giveawayId: id })
+		        });
+        
+		        if (res.ok) {
+		            alert("Giveaway ended!");
+		            const item = document.getElementById(`item-${id}`);
+		            if (item) {
+		                item.remove();
+		                const list = document.getElementById('active-list');
+		                if (list.children.length === 0) {
+		                    list.innerHTML = '<p style="color: #777;">No active giveaways running.</p>';
+		                }
+		            }
+		        } else {
+		            const errorText = await res.text();
+		            alert(`Failed to end giveaway: ${res.status} ${errorText}`);
+		        }
+		    } catch (err) {
+		        alert("Error ending giveaway: " + err.message);
+		    }
+		}
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status-msg');
+            el.className = type;
+            el.innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        window.switchTab = function(tabName) {
+            document.getElementById('view-giveaways').style.display = 'none';
+            document.getElementById('view-settings').style.display = 'none';
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+
+            if(tabName === 'giveaways') {
+                document.getElementById('view-giveaways').style.display = 'block';
+                btns[0].classList.add('active');
+            } else {
+                document.getElementById('view-settings').style.display = 'block';
+                btns[1].classList.add('active');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initDashboard();
+        });
+
+        // ================= STEP 4: POLLING LOGIC =================
+        // This checks every 5 seconds if the giveaway is still active in the database
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/giveaway/status');
+                const data = await res.json();
+                
+                // If the server says 'null', it means the giveaway ended naturally
+                if (data.activeId === null) {
+                    // Find the list and clear it
+                    const list = document.getElementById('active-list');
+                    list.innerHTML = '<p style="color: white;">No active giveaways running.</p>';
+                }
+            } catch (e) {
+                // Ignore errors to avoid console spam
+            }
+        }, 5000); // Check every 5 seconds
+    </script>
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Secrets and Keys
+.env
+.env.local
+*.key
+*.pem
+
+# Dependencies (installed libraries)
+node_modules/
+
+# System Files (Mac/Windows/Editor junk)
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment variables
+.env.development.local
+.env.test.local
+.env.production.local
