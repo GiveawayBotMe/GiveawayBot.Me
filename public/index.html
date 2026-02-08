@@ -2,21 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - GiveawayBot.Me</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveawayBot.Me - Login</title>
+    
+    <!-- CSS -->
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #6441a5; margin: 0; }
-        .container { background: black; color: #6441A5; padding: 3rem; border-radius: 10px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 400px; }
-        h1 { color: #6441a5; margin-top: 0; }
-        .btn { display: inline-block; padding: 12px 24px; background: #9146FF; color: black; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 1.1rem; margin-top: 30px; transition: background 0.2s;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; margin: 0; padding: 0; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .container { text-align: center; background: #1f1f1f; padding: 40px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border: 1px solid #333; max-width: 400px; width: 90%; }
+        h1 { color: #9146FF; margin-bottom: 10px; font-size: 2rem; }
+        p { color: #aaa; margin-bottom: 30px; }
+        .btn { display: inline-block; padding: 12px 24px; background: #9146FF; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; transition: background 0.3s; cursor: pointer; border: none; font-size: 1rem; }
         .btn:hover { background: #772ce8; }
+        .footer { margin-top: 20px; font-size: 0.8rem; color: #555; }
     </style>
+
+    <!-- ================= EZOIC HEADER SCRIPT ================= -->
+    <script async src="//www.ezojs.com/ezoic/sa.min.js"></script>
+    <script>
+        window.ezstandalone = window.ezstandalone || {};
+        ezstandalone.cmd = ezstandalone.cmd || [];
+    </script>
+    <!-- ================================================= -->
+
 </head>
 <body>
 
     <div class="container">
-        <h1>GiveawayBot Setup</h1>
-        <p>Please log in with Twitch to link your channel.</p>
-        <a href="/auth/twitch" class="btn">Login with Twitch</a>
+        <h1>GiveawayBot.Me</h1>
+        <p>Run giveaways for your Twitch community.</p>
+        
+        <form action="/auth/twitch">
+            <button type="submit" class="btn">Login with Twitch</button>
+        </form>
+
+        <div class="footer">
+            &copy; 2026 GiveawayBot.Me
+        </div>
     </div>
 
 </body>
