@@ -2,7 +2,7 @@
 
 Run engaging, fair, and customizable giveaways for your Twitch community directly from your browser.
 
-**🌐 **[Go to GiveawayBot.me](https://giveawaybot.me)**
+🌐 **[Go to GiveawayBot.me](https://giveawaybot.me)**
 
 ---
 
